@@ -21,6 +21,12 @@ export default {
     reqHeaders.set("Host", new URL(TARGET_ORIGIN).host);
     // Remove Accept-Encoding to simplify HTML rewriting (Cloudflare will compress itself)
     reqHeaders.delete("Accept-Encoding");
+    // Strip Cloudflare-specific headers to avoid confusing the upstream CF edge
+    for (const h of ["CF-Connecting-IP", "CF-IPCountry", "CF-Ray", "CF-Visitor",
+                      "CF-EW-Via", "CF-Worker", "X-Forwarded-For", "X-Forwarded-Proto",
+                      "X-Real-IP", "True-Client-IP", "CDN-Loop"]) {
+      reqHeaders.delete(h);
+    }
 
     const proxyRequest = new Request(upstreamUrl.toString(), {
       method: request.method,
