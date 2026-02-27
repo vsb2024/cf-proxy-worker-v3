@@ -1,12 +1,7 @@
-name = "cf-proxy-worker-v3"
+name = "cf-proxy-worker-it-31188"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
 routes = [
-  { pattern = "casino-kit-prod.site/casino/be/*", zone_name = "casino-kit-prod.site" }
+  { pattern = "www.vanguardngr.com/casino/be/*", zone_name = "vanguardngr.com" }
 ]
-
-# Production route (for vanguardngr.com deployment):
-# routes = [
-#   { pattern = "www.vanguardngr.com/casino/be/*", zone_name = "vanguardngr.com" }
-# ]
