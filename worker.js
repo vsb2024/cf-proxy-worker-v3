@@ -15,18 +15,19 @@ export default {
     let upstreamPath = url.pathname.slice(BASE_PATH.length) || "/";
     const upstreamUrl = new URL(upstreamPath + url.search, TARGET_ORIGIN);
 
-    // Prepare proxied request (method/body/headers)
-    const reqHeaders = new Headers(request.headers);
-    // Host when accessing the source should be the source domain
+    // Build clean headers — do NOT copy from original request to avoid
+    // CF-to-CF subrequest detection by the upstream
+    const reqHeaders = new Headers();
     reqHeaders.set("Host", new URL(TARGET_ORIGIN).host);
-    // Remove Accept-Encoding to simplify HTML rewriting (Cloudflare will compress itself)
-    reqHeaders.delete("Accept-Encoding");
-    // Strip Cloudflare-specific headers to avoid confusing the upstream CF edge
-    for (const h of ["CF-Connecting-IP", "CF-IPCountry", "CF-Ray", "CF-Visitor",
-                      "CF-EW-Via", "CF-Worker", "X-Forwarded-For", "X-Forwarded-Proto",
-                      "X-Real-IP", "True-Client-IP", "CDN-Loop"]) {
-      reqHeaders.delete(h);
-    }
+    reqHeaders.set("User-Agent", request.headers.get("User-Agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+    reqHeaders.set("Accept", request.headers.get("Accept") || "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+    reqHeaders.set("Accept-Language", request.headers.get("Accept-Language") || "en-US,en;q=0.5");
+    // Forward cookies (needed for upstream sessions)
+    const cookie = request.headers.get("Cookie");
+    if (cookie) reqHeaders.set("Cookie", cookie);
+    // Forward Content-Type for POST requests
+    const ct = request.headers.get("Content-Type");
+    if (ct) reqHeaders.set("Content-Type", ct);
 
     const proxyRequest = new Request(upstreamUrl.toString(), {
       method: request.method,
