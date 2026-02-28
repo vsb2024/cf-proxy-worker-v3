@@ -13,13 +13,11 @@ export default {
 
     // Build target URL: /casino/be/foo -> https://online-casino-be.com/foo
     let upstreamPath = url.pathname.slice(BASE_PATH.length) || "/";
-    // Fetch directly from origin IP to bypass CF-to-CF subrequest issues
-    const ORIGIN_IP = "206.189.243.237";
-    const upstreamUrl = new URL(upstreamPath + url.search, `https://${ORIGIN_IP}`);
+    const upstreamUrl = new URL(upstreamPath + url.search, TARGET_ORIGIN);
 
     // Prepare proxied request (method/body/headers)
     const reqHeaders = new Headers(request.headers);
-    // Host must be the real domain so the origin serves correct content
+    // Host when accessing the source should be the source domain
     reqHeaders.set("Host", new URL(TARGET_ORIGIN).host);
     // Remove Accept-Encoding to simplify HTML rewriting (Cloudflare will compress itself)
     reqHeaders.delete("Accept-Encoding");
