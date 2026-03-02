@@ -92,7 +92,7 @@ export default {
       const css = await upstreamResp.text();
       const rewrittenCss = css
         // Replace only paths that don't already start with basePath
-        .replaceAll(/\burl\((['"]?)\/(?!casino/be|\/)/g, `url($1${BASE_PATH}/`)
+        .replaceAll(/\burl\((['"]?)\/(?!casino\/be|\/)/g, `url($1${BASE_PATH}/`)
         .replaceAll(new RegExp(escapeRegExp(TARGET_ORIGIN) + "(?!" + escapeRegExp(BASE_PATH) + ")", "g"), ``);
       sanitizeHeadersForProxy(outHeaders);
       outHeaders.set("Content-Length", String(new TextEncoder().encode(rewrittenCss).length));
