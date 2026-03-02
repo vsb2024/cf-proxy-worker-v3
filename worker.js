@@ -11,8 +11,8 @@ export default {
       return new Response("Not Found", { status: 404 });
     }
 
-    // Build target URL: /casino/be/foo -> https://online-casino-be.com/foo
-    let upstreamPath = url.pathname.slice(BASE_PATH.length) || "/";
+    // Build target URL: /casino/be/foo -> https://online-casino-be.com/casino/be/foo
+    let upstreamPath = url.pathname; // use full path as is
     const upstreamUrl = new URL(upstreamPath + url.search, TARGET_ORIGIN);
 
     // Prepare proxied request (method/body/headers)
@@ -43,7 +43,7 @@ export default {
       return upstreamResp;
     }
 
-    // Rewrite Set-Cookie (Domain=online-casino-be.com -> Domain=www.vanguardngr.com)
+    // Rewrite Set-Cookie (Domain=online-casino-be.com -> Domain=casino-kit-prod.site)
     const outHeaders = new Headers(upstreamResp.headers);
     const setCookies = getAllSetCookie(outHeaders);
     if (setCookies.length) {
@@ -92,7 +92,7 @@ export default {
       const css = await upstreamResp.text();
       const rewrittenCss = css
         // Replace only paths that don't already start with basePath
-        .replaceAll(/\burl\((['"]?)\/(?!casino\/be|\/)/g, `url($1${BASE_PATH}/`)
+        .replaceAll(/\burl\((['"]?)\/(?!casino/be|\/)/g, `url($1${BASE_PATH}/`)
         .replaceAll(new RegExp(escapeRegExp(TARGET_ORIGIN) + "(?!" + escapeRegExp(BASE_PATH) + ")", "g"), ``);
       sanitizeHeadersForProxy(outHeaders);
       outHeaders.set("Content-Length", String(new TextEncoder().encode(rewrittenCss).length));
@@ -112,7 +112,7 @@ function rewriteAbsoluteToProxy(href, targetOrigin, basePath, reqUrlObj) {
   try {
     const u = new URL(href, targetOrigin);
     const t = new URL(targetOrigin);
-    // If link points to source domain — rewrite to proxy path
+    // If link points to source domain — keep as is (path already contains /casino/be/)
     if (u.origin === t.origin) {
       // Check if path already starts with basePath
       if (u.pathname.startsWith(basePath)) {
@@ -200,6 +200,9 @@ function getAllSetCookie(headers) {
   // Fallback: some environments concatenate with comma (not always correct, but let's try)
   const one = headers.get("Set-Cookie");
   if (!one) return [];
+  // Splitting based on ", " between cookies, where date attributes also have commas — so better not split blindly.
+  // Simple approach here: if there are consecutive "Path=" or "Domain=" — split by "], " — but this is unreliable.
+  // For CF, getAll is sufficient; fallback will keep as one cookie.
   return [one];
 }
 
