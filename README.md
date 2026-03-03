@@ -21,16 +21,8 @@ This Worker proxies content from `https://online-casino-be.com/casino/be/*` to t
 3. Copy all code from the `worker.js` file and paste it into the editor
 4. Click **Deploy** (blue button at the top-right)
 
-### Step 4: Ensure DNS Record Exists
-Before adding a route, verify that a DNS record exists for the hostname used in the route:
 
-1. In the left sidebar, go to the **vanguardngr.com** zone
-2. Click **DNS** > **Records**
-3. Ensure there is an A or CNAME record for `www` with **Proxy status: Proxied** (orange cloud)
-   - If no record exists, create one: Type `A`, Name `www`, IP `192.0.2.1`, Proxy status **Proxied**
-4. The record **MUST** be proxied (orange cloud) - DNS only (grey cloud) will NOT trigger Worker routes
-
-### Step 5: Add a Route
+### Step 4: Add a Route
 1. Navigate back to **Workers & Pages** in the left sidebar
 2. Click on your Worker's name to open its overview page
 3. Go to the **Settings** tab
@@ -41,7 +33,7 @@ Before adding a route, verify that a DNS record exists for the hostname used in 
    - **Route**: `www.vanguardngr.com/casino/be/*`
 7. Click **Add route**
 
-### Step 6: Verify
+### Step 5: Verify
 Open in browser: `https://www.vanguardngr.com/casino/be/`
 
 The page should display content from `online-casino-be.com`.
