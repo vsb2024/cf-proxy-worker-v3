@@ -87,13 +87,15 @@ export default {
       }));
     }
 
-    // CSS: sometimes useful to rewrite url(/...) => url(/casino/be/...)
+    // CSS: rewrite url() to use proxy domain
     if (contentType.includes("text/css")) {
+      const proxyOrigin = url.origin; // e.g. https://www.vanguardngr.com
       const css = await upstreamResp.text();
       const rewrittenCss = css
-        // Replace only paths that don't already start with basePath
+        // Replace root-relative paths that don't already start with basePath
         .replaceAll(/\burl\((['"]?)\/(?!casino\/be|\/)/g, `url($1${BASE_PATH}/`)
-        .replaceAll(new RegExp(escapeRegExp(TARGET_ORIGIN) + "(?!" + escapeRegExp(BASE_PATH) + ")", "g"), ``);
+        // Replace target domain with proxy domain
+        .replaceAll(TARGET_ORIGIN, proxyOrigin);
       sanitizeHeadersForProxy(outHeaders);
       outHeaders.set("Content-Length", String(new TextEncoder().encode(rewrittenCss).length));
       return new Response(rewrittenCss, { status: upstreamResp.status, headers: outHeaders });
@@ -107,37 +109,35 @@ export default {
 
 // === Helper functions ===
 
-// Rewrite absolute/root URL to our prefix
+// Rewrite absolute/root URL to proxy domain (keep full absolute URL with proxy host)
 function rewriteAbsoluteToProxy(href, targetOrigin, basePath, reqUrlObj) {
+  const proxyOrigin = reqUrlObj.origin; // e.g. https://www.vanguardngr.com
   try {
     const u = new URL(href, targetOrigin);
     const t = new URL(targetOrigin);
-    // If link points to source domain — keep as is (path already contains /casino/be/)
+    // If link points to source domain — rewrite to proxy domain
     if (u.origin === t.origin) {
-      // Check if path already starts with basePath
       if (u.pathname.startsWith(basePath)) {
-        return u.pathname + (u.search || "") + (u.hash || "");
+        return proxyOrigin + u.pathname + (u.search || "") + (u.hash || "");
       }
-      return basePath + (u.pathname.startsWith("/") ? u.pathname : `/${u.pathname}`) + (u.search || "") + (u.hash || "");
+      return proxyOrigin + basePath + (u.pathname.startsWith("/") ? u.pathname : `/${u.pathname}`) + (u.search || "") + (u.hash || "");
     }
     // If link is root (when href started with "/")
     if (href.startsWith("/")) {
-      // Check if path already starts with basePath
       if (href.startsWith(basePath)) {
-        return href;
+        return proxyOrigin + href;
       }
-      return basePath + href;
+      return proxyOrigin + basePath + href;
     }
     // Otherwise — keep as is (external domains)
     return href;
   } catch {
     // relative without protocol etc.
     if (href.startsWith("/")) {
-      // Check if path already starts with basePath
       if (href.startsWith(basePath)) {
-        return href;
+        return proxyOrigin + href;
       }
-      return basePath + href;
+      return proxyOrigin + basePath + href;
     }
     // Leave relative links — browser will resolve relative to current path
     return href;
